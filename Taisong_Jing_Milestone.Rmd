@@ -1,0 +1,117 @@
+---
+title: "Taisong_Jing_Milestone_Report"
+author: "Taisong Jing"
+date: "Saturday, November 15, 2014"
+output: html_document
+---
+
+This is a milestone report on the capstone project towards specialization in data science. The goal of this natural language processing project is to build a word prediction model by text mining. The three data sets "en\_US.blogs.txt", "en\_US.news.txt", and "en\_US.twitter.txt" are acquired from blogs, news, and twitter. This report is a first exploratory analysis of the texts in the provided data sets.
+
+###1. The original data set and subsetting
+
+The basic summary statistics of the three data sets are as follows (counted using Python)):
+
+```{r, echo=FALSE}
+BlogLines<-899288
+BlogWords<-37334131
+NewsLines<-1010242
+NewsWords<-34372531
+TwitterLines<-2360148
+TwitterWords<-30373583
+counts<-matrix(c(BlogLines, BlogWords, NewsLines, NewsWords, TwitterLines, TwitterWords), nrow=3, byrow=TRUE)
+basicStat<-data.frame(counts, row.names=c("en_US.blog.txt", "en_US.news.txt", "en_US.twitter.txt"))
+colnames(basicStat)<-c("lines", "words")
+```
+
+```{r, echo=FALSE}
+basicStat
+```
+
+Since the data sets are fairly large the computation resources are limited, we only take about 10% sample of the data set to analyze. At the same time, we discard all the characters that are not alpha-numeric, and replace the "\!", and "\?" symbles with "\.". Here is the subsetting R code for the "en\_US\.twitter\.txt"; the subsetting for the other two files are the same. The three subsets of the files are stored in "blogsSample\.txt", "newsSample\.txt", and "twitterSample.txt".
+```{r, eval=FALSE}
+##take sample subset of the files
+con<-file("en_US.twitter.txt","r")
+readSize<-100
+set.seed(100)
+chunk<-character(0)
+write(chunk, file="twitterSample.txt")
+chunk<-readLines(con, readSize)
+while ( length(chunk) > 0 ) {
+    if (runif(1)<0.1) {
+        chunk<-gsub("[^(a-zA-Z0-9 |\\.|\\!|\\?) ]", "", chunk)
+        chunk<-gsub("[\\.|\\!|\\?]", " . ", chunk)
+        write(chunk, file="twitterSample.txt", append=TRUE)
+    }
+    chunk<-readLines(con, readSize)
+}
+close(con)
+```
+
+The basic statistics of the three sample files are:
+```{r, echo=FALSE}
+subBlogLines<-84200
+subBlogWords<-3501073
+subNewsLines<-77259
+subNewsWords<-2643969
+subTwitterLines<-230201
+subTwitterWords<-3353613
+subcounts<-matrix(c(subBlogLines, subBlogWords, subNewsLines, subNewsWords, subTwitterLines, subTwitterWords), nrow=3, byrow=TRUE)
+subbasicStat<-data.frame(counts, row.names=c("blogsSample.txt", "newsSample.txt", "twitterSample.txt"))
+colnames(subbasicStat)<-c("lines", "words")
+subbasicStat
+```
+
+###2. Most frequent words and phrases in the data sets
+The frequencies of the words and two-word-phrases in the sample files are summarized as follows:
+```{r, echo=FALSE}
+freqOne90<-"5000 (6281689 counts out of 6952000)"
+freqOne50<-"225 (3470393 counts out of 6952000)"
+freqTwo90<-"1250000 (7685044 counts out of 8499338)"
+freqTwo50<-"225 (4216136 counts out of 8499338)"
+sample<-matrix(c(freqOne90, freqOne50, freqTwo90, freqTwo50), nrow=2, byrow=TRUE)
+colnames(sample)<-c("90% instances", "50% instances")
+sampleStat<-data.frame(sample,row.names=c("words", "two-word phrases"))
+sampleStat
+```
+
+The histograms of the most frequently used words and two-word-phrases are as follows:
+
+- word:
+
+```{r, echo=FALSE}
+library(xlsx)
+library(ggplot2)
+Uni25<-read.xlsx("UniChief.xlsx", sheetIndex=1)
+colnames(Uni25)<-c("word", "freq")
+ggplot(Uni25, aes(word, freq))+geom_bar(stat="identity")+theme(axis.text.x=element_text(angle=45, hjust=1))
+```
+
+- two-word phrase:
+
+<img src="Bigram_Frequency.png">
+
+- two-word phrase:
+
+
+###3. Wordclouds for the three sample files
+
+The wordcloud is a favorable way to visualize the high-frequency words in a piece of text. Below are the wordclouds for "blogsSample\.txt", "newsSample\.txt", and "twitterSample.txt":
+
+- "blogsSample\.txt":
+
+<img src="wcBlog.png">
+
+- "newsSample\.txt":
+
+<img src="wcNews.png">
+
+- "twitterSample\.txt":
+
+<img src="wcTwitter.png">
+
+From the three wordclouds we can see there are more high-frequency words in twitter than in blogs or news. A possible explanation for this phenomenon is that the language used on twitters are more casual and oral-based.
+
+###4. Plans on the prediction algorithm and the shiny app
+The prediction algorithm will be based on the n-gram model. Due to the limitation of the computing resources, 2-gram or 3-gram would be a reasonable choice. To improve the performance, I will try some smoothing techniques such as Good-Turing smoothing.
+
+My current idea on the shiny app is to let the user come up with a few words, give a number for each word to indicate its position in the sentence, then the app will fill out the sentence according to the prediction algorithm. For example, if the user chooses "I", "bike" and "school" with position "1", "4",  and "6", then a possible prediction is "I ride a bike to school." Sometimes the prediction sentence may be meaningful or funny!
